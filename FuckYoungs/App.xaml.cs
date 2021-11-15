@@ -14,5 +14,6 @@ namespace FuckYoungs
     public partial class App : Application
     {
 
+
     }
 }

@@ -4,10 +4,62 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FuckYoungs"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <Button Content="Start" Name="btn_login" HorizontalAlignment="Left" Margin="416,252,0,0" VerticalAlignment="Top" Click="btn_login_Click"/>
+        MinHeight="600"
+        MaxHeight="600"
+        MinWidth="670"
+        MaxWidth="670"
+        Title="FuckYoung">
+    <Grid Margin="10,0,10,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="121*"/>
+            <RowDefinition Height="464*"/>
+        </Grid.RowDefinitions>
+        <GroupBox Header="操作" Margin="0,0,0,5">
+            <Grid>
+                <Label Content="最新期数 : " HorizontalAlignment="Left" Margin="32,30,0,0" VerticalAlignment="Top" Width="70" Height="25"/>
+                <TextBlock HorizontalAlignment="Left" Block.TextAlignment="Center" FontSize="14" x:Name="TB_Num" Margin="107,33,0,0" Width="40" Text="88"  TextWrapping="Wrap" VerticalAlignment="Top" Height="22"/>
+                <Button Content="开始" x:Name="btn_start" HorizontalAlignment="Left" Margin="502,11,0,0" VerticalAlignment="Top" Width="69" Click="btn_start_Click" Height="25"/>
+                <Label Content="总人数 : " HorizontalAlignment="Left" Margin="264,32,0,0" VerticalAlignment="Top" Width="55" Height="24"/>
+                <TextBlock HorizontalAlignment="Left" Block.TextAlignment="Center" FontSize="14" x:Name="TB_allPeple" Margin="324,34,0,0" Width="40" Text="0"  TextWrapping="Wrap" VerticalAlignment="Top" Height="22"/>
+                <Button Content="清空日志" x:Name="btn_ClearLog" HorizontalAlignment="Left" VerticalAlignment="Top" Width="69" Height="25" Margin="502,54,0,0" Click="btn_ClearLog_Click"/>
+            </Grid>
+        </GroupBox>
+        <TabControl Margin="0,5,0,10" Grid.Row="1">
+            <TabItem Header="日志消息">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <ListBox x:Name="LB_LogView" Foreground="White" Background="Black"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="用户管理">
+                <Grid Background="White">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="141*"/>
+                        <RowDefinition Height="70*"/>
+                    </Grid.RowDefinitions>
+                    <ListView Margin="0,0,0,5">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <GroupBox Header="" Margin="0,5,0,5" Grid.Row="1">
+                        <Grid>
+                            <Button Content="录入" x:Name="btn_dbInsert" HorizontalAlignment="Left" VerticalAlignment="Top" Width="70" Height="25" Click="btn_dbInsert_Click" Margin="271,10,0,0"/>
+                            <Label Content="账号：" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+                            <TextBox HorizontalAlignment="Left" Margin="56,10,0,0" Text="" x:Name="TB_username" TextWrapping="Wrap" VerticalAlignment="Top" Width="177" Height="25"/>
+                            <Label Content="密码：" HorizontalAlignment="Left" Margin="10,63,0,0" VerticalAlignment="Top"/>
+                            <TextBox HorizontalAlignment="Left" x:Name="TB_password" Margin="56,63,0,0" VerticalAlignment="Top" Width="177" Height="25"/>
+                            <Button Content="刷新" HorizontalAlignment="Left" Margin="271,63,0,0" VerticalAlignment="Top" Height="25" Width="70"/>
+                            <Button Content="删除" HorizontalAlignment="Left" Margin="383,10,0,0" VerticalAlignment="Top" Height="25" Width="74"/>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
+        </TabControl>
 
     </Grid>
 </Window>
