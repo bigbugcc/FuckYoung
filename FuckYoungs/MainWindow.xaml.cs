@@ -15,6 +15,7 @@ using System.Windows.Threading;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Windows.Data;
 
 namespace FuckYoungs
 {
@@ -25,10 +26,15 @@ namespace FuckYoungs
     {
         private RestClient client;
         private string url = "http://home.yngqt.org.cn";
+        private string loginUrl = "/qndxx/login.ashx";
         private string cookie = "";
-        private string studyId = "88";
+        private string studyId = "1";
+        private bool IsRefresh = false;
+        private bool IsStart = false;
+        private Thread thread;
         private SqlSugarProvider _context = null;
         private ObservableCollection<User> users = new ObservableCollection<User>();
+        private ObservableCollection<User> failed = new ObservableCollection<User>();
         private ObservableCollection<string> Log = new ObservableCollection<string>();
 
         public MainWindow()
@@ -38,34 +44,41 @@ namespace FuckYoungs
             Init();
             LB_LogView.ItemsSource = Log;
             Log.CollectionChanged += Log_CollectionChanged;
+            users.CollectionChanged += Users_CollectionChanged;
+            failed.CollectionChanged += Failed_CollectionChanged;
+            GetNew();
         }
 
-        private void Log_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        private void Failed_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            TB_allPeple.Text = users.Count.ToString();
-            //日志滚动
-            LB_LogView.SelectedIndex = LB_LogView.Items.Count - 1;
+            //TB_FailedNum.Text = failed.Count.ToString();
+        }
+
+        //初始化方法
+        private void Init()
+        {
+            client = new RestClient(url);
+            _context.Queryable<User>().ToListAsync().Result.ForEach(f => users.Add(f));
+            LV_UserList.ItemsSource = users;
+        }
+
+        //日志监听方法
+        private void Log_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
             LB_LogView.ScrollIntoView(LB_LogView.SelectedItem);
         }
 
-        private void Init() 
+        //用户组
+        private void Users_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            client = new RestClient(url);
-            client.UserAgent = HttpHelp.UA_PC;
-            _context.Queryable<User>().ToListAsync().Result.ForEach(f=>users.Add(f));
-            TB_Num.DataContext = users.Count;
-            users.CollectionChanged += Users_CollectionChanged;
-            TB_allPeple.Text = users.Count.ToString();
-        }
 
-        private void Users_CollectionChanged(object sender,NotifyCollectionChangedEventArgs e)
-        {
-            
-            if (e.Action == NotifyCollectionChangedAction.Add) {
+            if (e.Action == NotifyCollectionChangedAction.Add && !IsRefresh) {
                 var user = e.NewItems[0] as User;
                 var ss = _context.Insertable<User>(user).ExecuteCommand();
                 if (ss == 1)
                 {
+                    TB_username.Text = "";
+                    TB_password.Text = "";
                     Log.Add(user.txtusername + " 用户添加成功！");
                 }
                 else
@@ -73,39 +86,28 @@ namespace FuckYoungs
                     users.Remove(user);
                     Log.Add(user.txtusername + " 用户添加失败！");
                 }
-            } else if (e.Action == NotifyCollectionChangedAction.Remove) {
+            } else if (e.Action == NotifyCollectionChangedAction.Remove && !IsRefresh) {
                 var user = e.OldItems[0] as User;
-                _context.Deleteable<User>().Where(u=>u.Id == user.Id).ExecuteCommand();
+                _context.Deleteable<User>().Where(u => u.Id == user.Id).ExecuteCommand();
             }
         }
 
         //登录
-        private IRestResponse Login() {
-            string loginUrl = "/qndxx/login.ashx";
+        private IRestResponse Login(User user) {
 
-            var user = new User{
-                txtusername = "wuyanlong",
-                txtpassword = Utils.Md5("qwer1234.")
-            };
-            var data = JsonConvert.SerializeObject(user);
-
-
-            var req = new RestRequest(loginUrl,Method.POST);
+            client.UserAgent = HttpHelp.UA_PC;
+            var req = new RestRequest(loginUrl, Method.POST);
             req.AddHeader("Accept", HttpHelp.Accept);
             req.AddHeader("Content-Type", HttpHelp.ContentType);
-            req.AddParameter(HttpHelp.ContentType, data, ParameterType.RequestBody);
+            req.AddParameter(HttpHelp.ContentType, user, ParameterType.RequestBody);
 
             var rep = client.ExecuteAsync(req).Result;
 
             if (rep.StatusCode == HttpStatusCode.OK)
             {
-                Log.Add(rep.Content);
-
                 var co = rep.Cookies.LastOrDefault();
 
                 cookie = co.Name + "=" + co.Value;
-
-                GetNew();
             }
             else {
                 Log.Add(rep.Content);
@@ -115,7 +117,7 @@ namespace FuckYoungs
 
         //签到
         private HttpStatusCode CheckIn() {
-            var req = new RestRequest("/qndxx/user/qiandao.ashx",Method.POST);
+            var req = new RestRequest("/qndxx/user/qiandao.ashx", Method.POST);
 
             req.AddHeader("Cookie", cookie);
 
@@ -127,73 +129,131 @@ namespace FuckYoungs
         }
 
         //学习
-        private HttpStatusCode Study() {
+        private HttpStatusCode Study(string cookies) {
 
             var req = new RestRequest("/qndxx/xuexi.ashx", Method.POST);
 
-            req.AddHeader("Cookie",cookie);
+            req.AddHeader("Cookie", cookies);
 
-            req.AddParameter(HttpHelp.ContentType, "{txtid:"+studyId+"}", ParameterType.RequestBody);
+            req.AddParameter(HttpHelp.ContentType, "{txtid:" + studyId + "}", ParameterType.RequestBody);
 
             var rep = client.Execute(req);
-
-            Log.Add(rep.Content);
 
             return rep.StatusCode;
         }
 
         //个人学习记录
         public void StudyLog() {
-            var req = new RestRequest("/qndxx/user/pc/study.aspx",Method.GET);
+            var req = new RestRequest("/qndxx/user/pc/study.aspx", Method.GET);
 
-            req.AddHeader("Cookie",cookie);
+            req.AddHeader("Cookie", cookie);
 
             var rep = client.Execute(req);
         }
 
         //抓取最新一期学习Id
         public void GetNew() {
-            Thread.Sleep(1500);
-            var req = new RestRequest("/qndxx/default.aspx", Method.GET);
-
-            req.AddHeader("Cookie", cookie);
-            client.UserAgent = HttpHelp.UA_Phone;
-            var rep = client.ExecuteAsync(req).Result;
-            if (rep.StatusCode == HttpStatusCode.OK)
-            {
-                try
-                {
-                    string pattern = @"[s][t][u][d][y][(].*?[)]+";
-                    string str = rep.Content.ToString();
-                    var va = Regex.Matches(str, pattern).FirstOrDefault().Value;
-
-                    studyId = Regex.Replace(va, @"[^0-9]+", "");
-
-                    Log.Add("最新一期序号为:" + studyId);
-                    TB_Num.Text = studyId;
-                }
-                catch (Exception e)
-                {
-                    Log.Add(e.Message);
-                }
-            }
+            Log.Add("正在抓取最新的序号.......");
+            new Thread(() => {
+                this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                    var req = new RestRequest("/qndxx/default.aspx", Method.GET);
+                    client.UserAgent = "MicroMessenger";
+                    var rep = client.ExecuteAsync(req).Result;
+                    if (rep.StatusCode == HttpStatusCode.OK)
+                    {
+                        try
+                        {
+                            string pattern = @"[s][t][u][d][y][(].*?[)]+";
+                            string str = rep.Content.ToString();
+                            var va = Regex.Matches(str, pattern).FirstOrDefault().Value;
+                            studyId = Regex.Replace(va, @"[^0-9]+", "");
+                            Log.Add("成功！当前最新序号: " + studyId);
+                            TB_Num.Text = studyId;
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Add(e.Message);
+                        }
+                    }
+                    else
+                    {
+                        Log.Add("抓取失败，请重试！");
+                    }
+                }));
+            }).Start();
         }
 
         private void btn_start_Click(object sender, RoutedEventArgs e)
         {
-            new Thread(() => { this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                var login = Login();
-                if (login.StatusCode == HttpStatusCode.OK)
+            if (users.Count <= 0) {
+                Log.Add("请先添加用户信息后再试！");
+                return;
+            } else if (studyId.Equals("1")) {
+                Log.Add("前先抓取学习期数后再试！");
+                return;
+            }
+
+            StartStatus();
+            if (IsStart)
+            {
+                AutoResetEvent waiter = new AutoResetEvent(false);
+                thread = new Thread(() =>
                 {
+                    this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() =>
+                    {
+                        
+                        foreach (var item in users)
+                        {
+                            waiter.WaitOne(1000);
+                            var login = Login(item);
+                            if (login.StatusCode == HttpStatusCode.OK)
+                            {
+                                waiter.WaitOne(1000);
+                                //学习
+                                if (Study(cookie) != HttpStatusCode.OK)
+                                {
+                                    Log.Add(item.txtusername + " 学习失败！");
+                                }
+                                else
+                                {
+                                    //失败
+                                    failed.Add(item);
+                                }
+                                waiter.WaitOne(1000);
+                                //签到
+                                if (CB_CheckIn.IsChecked.Value && CheckIn() == HttpStatusCode.OK)
+                                {
+                                    Log.Add(item.txtusername + "签到成功！");
+                                }
 
-                }
-                else {
-                    return;
-                }
+                            }
+                            else
+                            {
+                                Log.Add(item.txtusername + " 登录失败！");
+                                failed.Add(item);
+                                continue;
+                            }
+                        }
+                        waiter.Close();
+                        StartStatus();
+                    }));
+                });
+                thread.Start();
+            }
+        }
 
-            })); 
-            }).Start();
-            
+        private void StartStatus() {
+            if (!IsStart)
+            {
+                btn_start.Content = "停止";
+                IsStart = !IsStart;
+            }
+            else
+            {
+                btn_start.Content = "开始";
+                IsStart = !IsStart;
+            }
+
         }
 
         private void btn_dbInsert_Click(object sender, RoutedEventArgs e)
@@ -206,7 +266,6 @@ namespace FuckYoungs
                     MessageBox.Show("该用户已存在！");
                     return;
                 }
-
                 var u = new User
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -221,21 +280,17 @@ namespace FuckYoungs
             }
         }
 
-        private void Btn_LookAll_Click(object sender, RoutedEventArgs e)
-        {
-            Log.Clear();
-            _context.Queryable<User>().ToListAsync().Result.ForEach(f=>Log.Add(f.txtusername));
-        }
-
         private void Btn_Del_Click(object sender, RoutedEventArgs e)
         {
-            var username =  LB_LogView.SelectedItem.ToString();
-            if (string.IsNullOrEmpty(username))
-                MessageBox.Show("请在下方的列表中选择要删除的用户！"); return;
-
-            if (_context.Queryable<User>().Any(u => u.txtusername == username))
+            var user =  LV_UserList.SelectedItem as User;
+            if (user==null) {
+                MessageBox.Show("请在列表中选择要删除的用户！"); 
+                return;
+            }
+            if (_context.Queryable<User>().Any(u => u.Id == user.Id))
             {
-                users.Remove(users.Where(u=>u.txtusername == username).FirstOrDefault());
+                users.Remove(users.Where(u=>u.Id == user.Id).FirstOrDefault());
+                Log.Add(user.txtusername+" 用户已删除！");
                 return;
             }
             else {
@@ -246,6 +301,22 @@ namespace FuckYoungs
         private void btn_ClearLog_Click(object sender, RoutedEventArgs e)
         {
             Log.Clear();
+            Log.Add("日志清除成功！");
+        }
+
+        private void Btn_Refresh_Click(object sender, RoutedEventArgs e)
+        {
+            IsRefresh = true;
+            users.Clear();
+            _context.Queryable<User>().ToListAsync().Result.ForEach(f => users.Add(f));
+            MessageBox.Show("刷新成功！");
+            IsRefresh = false;
+
+        }
+
+        private void btn_GetStudyId_Click(object sender, RoutedEventArgs e)
+        {
+            GetNew();
         }
     }
     

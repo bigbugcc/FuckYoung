@@ -4,11 +4,18 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FuckYoungs"
+        xmlns:conver ="clr-namespace:FuckYoungs.Convert"
         MinHeight="600"
         MaxHeight="600"
         MinWidth="670"
         MaxWidth="670"
-        Title="FuckYoung">
+        Title="FuckYoung-(青年大学习)">
+    <Window.Resources>
+        <Style x:Key="ListViewItemStyle" TargetType="{x:Type ListViewItem}">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+        <conver:ChangeIndex x:Key="ChangeIndex" />
+    </Window.Resources>
     <Grid Margin="10,0,10,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="121*"/>
@@ -16,12 +23,20 @@
         </Grid.RowDefinitions>
         <GroupBox Header="操作" Margin="0,0,0,5">
             <Grid>
-                <Label Content="最新期数 : " HorizontalAlignment="Left" Margin="32,30,0,0" VerticalAlignment="Top" Width="70" Height="25"/>
-                <TextBlock HorizontalAlignment="Left" Block.TextAlignment="Center" FontSize="14" x:Name="TB_Num" Margin="107,33,0,0" Width="40" Text="88"  TextWrapping="Wrap" VerticalAlignment="Top" Height="22"/>
-                <Button Content="开始" x:Name="btn_start" HorizontalAlignment="Left" Margin="502,11,0,0" VerticalAlignment="Top" Width="69" Click="btn_start_Click" Height="25"/>
-                <Label Content="总人数 : " HorizontalAlignment="Left" Margin="264,32,0,0" VerticalAlignment="Top" Width="55" Height="24"/>
-                <TextBlock HorizontalAlignment="Left" Block.TextAlignment="Center" FontSize="14" x:Name="TB_allPeple" Margin="324,34,0,0" Width="40" Text="0"  TextWrapping="Wrap" VerticalAlignment="Top" Height="22"/>
-                <Button Content="清空日志" x:Name="btn_ClearLog" HorizontalAlignment="Left" VerticalAlignment="Top" Width="69" Height="25" Margin="502,54,0,0" Click="btn_ClearLog_Click"/>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="23*"/>
+                    <RowDefinition Height="24*"/>
+                </Grid.RowDefinitions>
+                <Label Content="最新期数 : " HorizontalAlignment="Left" Margin="41,0,0,0" VerticalAlignment="Center" Width="70" Height="25"/>
+                <TextBlock HorizontalAlignment="Left" Block.TextAlignment="Center" FontSize="14" x:Name="TB_Num" Margin="116,13,0,0" Width="40" Text="88"  TextWrapping="Wrap" VerticalAlignment="Top" Height="22"/>
+                <Button Content="开始" x:Name="btn_start" HorizontalAlignment="Left" Margin="502,0,0,0" VerticalAlignment="Center" Width="69" Click="btn_start_Click" Height="25"/>
+                <Label Content="总人数 : " HorizontalAlignment="Left" Margin="219,0,0,0" VerticalAlignment="Center" Width="55" Height="24"/>
+                <TextBlock HorizontalAlignment="Left" Block.TextAlignment="Center" FontSize="14" x:Name="TB_allPeple" Margin="279,13,0,0" Width="40" Text="{Binding ElementName=LV_UserList, Path=Items.Count}"  TextWrapping="Wrap" VerticalAlignment="Top" Height="22"/>
+                <Button Content="清空日志" x:Name="btn_ClearLog" HorizontalAlignment="Left" VerticalAlignment="Top" Width="69" Height="25" Margin="502,8,0,0" Click="btn_ClearLog_Click" Grid.Row="1"/>
+                <Label Content="失败 : " HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="41,3,0,0" VerticalAlignment="Top" Width="70" Height="25" Grid.Row="1"/>
+                <TextBlock HorizontalAlignment="Left" Block.TextAlignment="Center" FontSize="14" x:Name="TB_FailedNum" Margin="116,6,0,0" Width="40" Text="0"  TextWrapping="Wrap" VerticalAlignment="Top" Height="22" Grid.Row="1"/>
+                <CheckBox Content="签到/打卡" Name="CB_CheckIn" HorizontalAlignment="Left" Margin="360,0,0,0" VerticalAlignment="Center"/>
+                <Button Content="获取最新期数" x:Name="btn_GetStudyId" HorizontalAlignment="Left" VerticalAlignment="Top" Width="95" Height="25" Margin="349,8,0,0" Grid.Row="1" Click="btn_GetStudyId_Click"/>
             </Grid>
         </GroupBox>
         <TabControl Margin="0,5,0,10" Grid.Row="1">
@@ -30,7 +45,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <ListBox x:Name="LB_LogView" Foreground="White" Background="Black"/>
+                    <ListBox x:Name="LB_LogView" SelectedIndex="{Binding ElementName=LB_LogView,Path=Items.Count,Converter={StaticResource ChangeIndex},Mode=OneWay}"  Foreground="White" Background="Black"/>
                 </Grid>
             </TabItem>
             <TabItem Header="用户管理">
@@ -39,22 +54,40 @@
                         <RowDefinition Height="141*"/>
                         <RowDefinition Height="70*"/>
                     </Grid.RowDefinitions>
-                    <ListView Margin="0,0,0,5">
+                    <ListView x:Name="LV_UserList" ItemContainerStyle="{StaticResource ListViewItemStyle}" Margin="0,0,0,5">
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn/>
+                                <GridViewColumn
+                                    Width="0px"
+                                    DisplayMemberBinding="{Binding Id}"
+                                    Header="Id" />
+                                <GridViewColumn Header="用户" Width="150px">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock TextAlignment="Center"  Text="{Binding txtusername}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="密码" Width="250px">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock TextAlignment="Center"  Text="{Binding txtpassword}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
                             </GridView>
                         </ListView.View>
                     </ListView>
+
                     <GroupBox Header="" Margin="0,5,0,5" Grid.Row="1">
                         <Grid>
-                            <Button Content="录入" x:Name="btn_dbInsert" HorizontalAlignment="Left" VerticalAlignment="Top" Width="70" Height="25" Click="btn_dbInsert_Click" Margin="271,10,0,0"/>
-                            <Label Content="账号：" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-                            <TextBox HorizontalAlignment="Left" Margin="56,10,0,0" Text="" x:Name="TB_username" TextWrapping="Wrap" VerticalAlignment="Top" Width="177" Height="25"/>
-                            <Label Content="密码：" HorizontalAlignment="Left" Margin="10,63,0,0" VerticalAlignment="Top"/>
-                            <TextBox HorizontalAlignment="Left" x:Name="TB_password" Margin="56,63,0,0" VerticalAlignment="Top" Width="177" Height="25"/>
-                            <Button Content="刷新" HorizontalAlignment="Left" Margin="271,63,0,0" VerticalAlignment="Top" Height="25" Width="70"/>
-                            <Button Content="删除" HorizontalAlignment="Left" Margin="383,10,0,0" VerticalAlignment="Top" Height="25" Width="74"/>
+                            <Button Content="录入" x:Name="btn_dbInsert" HorizontalAlignment="Left" VerticalAlignment="Top" Width="70" Height="25" Click="btn_dbInsert_Click" Margin="373,10,0,0"/>
+                            <Label Content="账号：" HorizontalAlignment="Left" Margin="54,10,0,0" VerticalAlignment="Top"/>
+                            <TextBox HorizontalAlignment="Left" Margin="100,10,0,0" Text="" x:Name="TB_username" TextWrapping="Wrap" VerticalAlignment="Top" Width="177" Height="25"/>
+                            <Label Content="密码：" HorizontalAlignment="Left" Margin="54,63,0,0" VerticalAlignment="Top"/>
+                            <TextBox HorizontalAlignment="Left" x:Name="TB_password" Margin="100,63,0,0" VerticalAlignment="Top" Width="177" Height="25"/>
+                            <Button Content="刷新" Name="Btn_Refresh" HorizontalAlignment="Left" Margin="373,63,0,0" VerticalAlignment="Top" Height="25" Width="70" Click="Btn_Refresh_Click"/>
+                            <Button Content="删除" Name="Btn_Del" HorizontalAlignment="Left" Margin="485,10,0,0" VerticalAlignment="Top" Height="25" Width="74" Click="Btn_Del_Click"/>
                         </Grid>
                     </GroupBox>
                 </Grid>
