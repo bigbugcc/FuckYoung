@@ -11,5 +11,6 @@ namespace FuckYoungs.Entity
         public string Id { get; set; }
         public string txtusername { get; set; }
         public string txtpassword { get; set; }
+        public string cookie { get; set; }
     }
 }

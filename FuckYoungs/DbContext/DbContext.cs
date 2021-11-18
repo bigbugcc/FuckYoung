@@ -1,5 +1,4 @@
-﻿using FuckYoungs.Entity;
-using Microsoft.Data.Sqlite;
+﻿using Microsoft.Data.Sqlite;
 using SqlSugar;
 using System;
 using System.IO;
