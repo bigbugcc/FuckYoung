@@ -147,7 +147,7 @@
                     </Grid.RowDefinitions>
                     <GroupBox Header="项目" HorizontalAlignment="Left" Height="150" Margin="10,9.8,0,0" Grid.Row="1" VerticalAlignment="Top" Width="624">
                         <Grid Height="165" Margin="0,0,-2,-1.8" VerticalAlignment="Top" HorizontalAlignment="Right" Width="614">
-                            <Label Content="·  @BigBug" FontWeight="Black" HorizontalAlignment="Left" Margin="10,96,0,0" VerticalAlignment="Top" Width="90" RenderTransformOrigin="0.838,2.672"/>
+                            <Label Content="·  Version：V1.2 @BigBug" FontWeight="Black" HorizontalAlignment="Left" Margin="10,96,0,0" VerticalAlignment="Top" Width="364" RenderTransformOrigin="0.838,2.672"/>
                             <Label Content="·  Bug反馈：" FontWeight="Black" HorizontalAlignment="Left" Margin="10,36,0,0" VerticalAlignment="Top" Width="75"/>
                             <Label  HorizontalAlignment="Left" Margin="85,36,0,0" VerticalAlignment="Top" Width="289">
                                 <Hyperlink x:Name="BlogHl1" Click="BlogHl_Click" NavigateUri="https://github.com/bigbugcc/FuckYoung/issues">
