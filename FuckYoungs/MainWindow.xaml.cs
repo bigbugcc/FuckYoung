@@ -32,26 +32,22 @@ namespace FuckYoungs
         private bool IsRefresh = false;
         private bool IsStart = false;
         private Task task = null;
-        private CancellationTokenSource tokenSource;
         private SqlSugarProvider _context = null;
         private ObservableCollection<User> users = new ObservableCollection<User>();
         private ObservableCollection<User> failed = new ObservableCollection<User>();
-        private Action<int> setLog = null;
+        private string Version = "V1.3";
         private delegate void LogAppendDelegate(Color color, string text);
 
         public MainWindow()
         {
             InitializeComponent();
             _context = new DbContext.DbContext().Client.Context;
-            tokenSource = new CancellationTokenSource();
             Init();
             SetNotice();
             users.CollectionChanged += Users_CollectionChanged;
             failed.CollectionChanged += Failed_CollectionChanged;
             RT_Log.TextChanged += RT_Log_TextChanged;
             GetNew();
-
-
         }
 
         private void RT_Log_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -182,6 +178,7 @@ namespace FuckYoungs
         //抓取最新一期学习Id
         public async Task GetNew()
         {
+            LogInfo("当前版本："+Version);
             LogInfo("正在抓取最新的序号.......");
             var req = new RestRequest("/qndxx/default.aspx", Method.GET);
             client.UserAgent = "MicroMessenger";
@@ -411,6 +408,7 @@ namespace FuckYoungs
 
         //协议告知
         private void SetNotice() {
+            LB_Version.Content = Version;
             TB_Notic.Text = "" +
                 "·  以任何方式查看此项目的人或直接或间接使用该项目都应仔细阅读此声明。作者保留随时更改或补充此免责声明的权利。一旦使用并复制了此项目，则视为您已接受此免责声明。\n" +
                 "·  您必须在下载后的24小时内从计算机或手机中完全删除该软件。\n" +
